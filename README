@@ -1,0 +1,15 @@
+Currently, this isn't useful for anyone, unless you want to help to move the
+MOL kernel module into the kernel.
+
+Done:
+ * Remove old kernel version code
+ * Remove Darwin code
+
+In Progress:
+ * Tighten up code by removing functions that aren't needed
+ * Inline code that was previously a function due to multiple OS support
+
+TODO:
+ * Review and remove unneded code (dead code, etc.)
+ * Review for kernel inclusion (checkpatch, etc.)
+ * Probably lots more
