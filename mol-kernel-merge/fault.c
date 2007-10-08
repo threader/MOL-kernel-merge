@@ -1,11 +1,4 @@
 /* 
- *   Creation Date: <2002/06/08 21:01:54 samuel>
- *   Time-stamp: <2004/02/19 11:54:33 samuel>
- *   
- *	<fault.c>
- *	
- *	Linux part
- *   
  *   Copyright (C) 2002, 2003, 2004 Samuel Rydh (samuel@ibrium.se)
  *   
  *   This program is free software; you can redistribute it and/or
@@ -27,27 +20,22 @@
 #include "mol-ioctl.h"
 #include "mtable.h"
 
-#ifdef CONFIG_HIGHPTE
-#error	"MOL is currently incompatible with CONFIG_HIGHPTE"
-#endif
-
-static inline ulong
-fix_pte( ulong *p, ulong set, ulong flags )
+static inline ulong fix_pte(ulong * p, ulong set, ulong flags)
 {
 	unsigned long ret, tmp;
-	
+
 	__asm__ __volatile__("\n"
-		"1:	lwarx	%0,0,%3		\n"
-		"	andc.	%1,%5,%0	\n"
-		"	addi	%1,0,0		\n"
-		"	bne-	2f		\n"
-		"	or	%1,%0,%4	\n"
-		"	stwcx.	%1,0,%3		\n"
-		"	bne-	1b		\n"
-		"2:				\n"
-		: "=&r" (tmp), "=&r" (ret), "=m" (*p)
-		: "r" (p), "r" (set), "r" (flags), "m" (*p)
-		: "cc" );
+			     "1:	lwarx	%0,0,%3		\n"
+			     "	andc.	%1,%5,%0	\n"
+			     "	addi	%1,0,0		\n"
+			     "	bne-	2f		\n"
+			     "	or	%1,%0,%4	\n"
+			     "	stwcx.	%1,0,%3		\n"
+			     "	bne-	1b		\n"
+			     "2:				\n":"=&r"
+			     (tmp), "=&r"(ret), "=m"(*p)
+			     :"r"(p), "r"(set), "r"(flags), "m"(*p)
+			     :"cc");
 	return ret;
 }
 
@@ -59,10 +47,9 @@ fix_pte( ulong *p, ulong set, ulong flags )
 #define PAGE_BITS_WRITE		(_PAGE_ACCESSED | _PAGE_DIRTY | _PAGE_HASHPTE )
 #define PAGE_BITS_READ		(_PAGE_ACCESSED | _PAGE_HASHPTE )
 
-ulong 
-get_phys_page( kernel_vars_t *kv, ulong va, int request_rw )
+ulong get_phys_page(kernel_vars_t * kv, ulong va, int request_rw)
 {
-	char *lvptr = (char*)va;
+	char *lvptr = (char *)va;
 	ulong lpte, uptr, *ptr;
 	ulong flags;
 	struct mm_struct *mm;
@@ -70,86 +57,89 @@ get_phys_page( kernel_vars_t *kv, ulong va, int request_rw )
 
 	/* pte bits that must be set */
 	flags = request_rw ? (_PAGE_USER | _PAGE_RW | _PAGE_PRESENT)
-		: (_PAGE_USER | _PAGE_PRESENT);
-	
-	uptr = ((ulong*)current->thread.pgdir)[va>>22];	/* top 10 bits */
-	ptr = (ulong*)(uptr & ~0xfff);
-	if( !ptr )
+	    : (_PAGE_USER | _PAGE_PRESENT);
+
+	uptr = ((ulong *) current->thread.pgdir)[va >> 22];	/* top 10 bits */
+	ptr = (ulong *) (uptr & ~0xfff);
+	if (!ptr)
 		goto no_page;
-	ptr = phys_to_virt( (int)ptr );
-	ptr = ptr + ((va>>12) & 0x3ff);	      	/* next 10 bits */
+	ptr = phys_to_virt((int)ptr);
+	ptr = ptr + ((va >> 12) & 0x3ff);	/* next 10 bits */
 
 	/* this allows us to keep track of this page until we have
 	 * added a full mtable entry for it. The reservation is lost if
 	 * a TLB invalidation occurs.
 	 */
-	make_lvptr_reservation( kv, lvptr );
+	make_lvptr_reservation(kv, lvptr);
 
 	/* we atomically set _PAGE_HASHPTE after checking PAGE_PRESENT and PAGE_RW.
 	 * We are then guaranteed to be notified about a TLB invalidation through the
 	 * flush_hash_page hook.
 	 */
-	lpte = fix_pte( ptr, (request_rw? PAGE_BITS_WRITE : PAGE_BITS_READ), flags );
+	lpte =
+	    fix_pte(ptr, (request_rw ? PAGE_BITS_WRITE : PAGE_BITS_READ),
+		    flags);
 
 	/* permissions violation */
-	if( !lpte )
+	if (!lpte)
 		goto no_page;
 
 	return lpte & ~0xfff;
 
-no_page:
-	BUMP( page_missing );
+      no_page:
+	BUMP(page_missing);
 
 	/* no mac page found... */
 	mm = current->mm;
-	down_read( &mm->mmap_sem );
+	down_read(&mm->mmap_sem);
 
-	if( !(vma=find_vma(mm,va)) || vma->vm_start > va )
+	if (!(vma = find_vma(mm, va)) || vma->vm_start > va)
 		goto bad_area;
-	if( !(vma->vm_flags & (request_rw ? VM_WRITE : (VM_READ | VM_EXEC))) )
+	if (!(vma->vm_flags & (request_rw ? VM_WRITE : (VM_READ | VM_EXEC))))
 		goto bad_area;
 
-	handle_mm_fault( mm, vma, va, request_rw );
+	/* Export removed in 2.6.23... */
+	handle_mm_fault(mm, vma, va, request_rw);
 
-	up_read( &mm->mmap_sem );
+	up_read(&mm->mmap_sem);
 	return get_phys_page(kv, va, request_rw);
 
-bad_area:
-	up_read( &mm->mmap_sem );
-	printk("get_phys_page: BAD AREA, lvptr = %08lx\n", va );
+      bad_area:
+	up_read(&mm->mmap_sem);
+	printk("get_phys_page: BAD AREA, lvptr = %08lx\n", va);
 	force_sig(SIGSEGV, current);
 	return 0;
 }
-
 
 /************************************************************************/
 /*	Debugger functions						*/
 /************************************************************************/
 
-int 
-dbg_get_linux_page( ulong va, dbg_page_info_t *r )
+int dbg_get_linux_page(ulong va, dbg_page_info_t * r)
 {
 	ulong val, uptr, *ptr;
-	
-	uptr = ((ulong*)current->thread.pgdir)[va>>22];	/* top 10 bits */
-	ptr = (ulong*)(uptr & ~0xfff);
-	if( !ptr )
+
+	/* top 10 bits */
+	uptr = ((ulong *) current->thread.pgdir)[va >> 22];
+	ptr = (ulong *) (uptr & ~0xfff);
+	if (!ptr)
 		return 1;
-	ptr = phys_to_virt( (int)ptr );
-	val = ptr[ (va>>12)&0x3ff ];		/* next 10 bits */
+	ptr = phys_to_virt((int)ptr);
+
+	/* next 10 bits */
+	val = ptr[(va >> 12) & 0x3ff];
 
 	r->phys = val & ~0xfff;
-	r->mflags = 
-		  DBG_TRANSL_PAGE_FLAG( val, _PAGE_PRESENT )
-		| DBG_TRANSL_PAGE_FLAG( val, _PAGE_USER )
-		| DBG_TRANSL_PAGE_FLAG(	val, _PAGE_GUARDED )
-		| DBG_TRANSL_PAGE_FLAG( val, _PAGE_COHERENT )
-		| DBG_TRANSL_PAGE_FLAG( val, _PAGE_NO_CACHE )
-		| DBG_TRANSL_PAGE_FLAG( val, _PAGE_WRITETHRU )
-		| DBG_TRANSL_PAGE_FLAG( val, _PAGE_DIRTY )
-		| DBG_TRANSL_PAGE_FLAG( val, _PAGE_ACCESSED )
-		| DBG_TRANSL_PAGE_FLAG( val, _PAGE_RW )
-		| DBG_TRANSL_PAGE_FLAG( val, _PAGE_HASHPTE )
-		| DBG_TRANSL_PAGE_FLAG( val, _PAGE_EXEC );
+	r->mflags = DBG_TRANSL_PAGE_FLAG(val, _PAGE_PRESENT)
+	    | DBG_TRANSL_PAGE_FLAG(val, _PAGE_USER)
+	    | DBG_TRANSL_PAGE_FLAG(val, _PAGE_GUARDED)
+	    | DBG_TRANSL_PAGE_FLAG(val, _PAGE_COHERENT)
+	    | DBG_TRANSL_PAGE_FLAG(val, _PAGE_NO_CACHE)
+	    | DBG_TRANSL_PAGE_FLAG(val, _PAGE_WRITETHRU)
+	    | DBG_TRANSL_PAGE_FLAG(val, _PAGE_DIRTY)
+	    | DBG_TRANSL_PAGE_FLAG(val, _PAGE_ACCESSED)
+	    | DBG_TRANSL_PAGE_FLAG(val, _PAGE_RW)
+	    | DBG_TRANSL_PAGE_FLAG(val, _PAGE_HASHPTE)
+	    | DBG_TRANSL_PAGE_FLAG(val, _PAGE_EXEC);
 	return 0;
 }

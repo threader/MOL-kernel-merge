@@ -1,12 +1,6 @@
 /* 
- *   Creation Date: <2003/03/06 22:03:59 samuel>
- *   Time-stamp: <2004/02/21 16:30:45 samuel>
- *   
- *	<vsid.S>
- *	
- *	VSID lookup (skiplist search)
- *   
  *   Copyright (C) 2003, 2004 Samuel Rydh (samuel@ibrium.se)
+ *   VSID lookup (skiplist search)
  *   
  *   This program is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License

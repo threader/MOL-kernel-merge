@@ -1,12 +1,6 @@
 /* 
- *   Creation Date: <97/07/26 18:23:02 samuel>
- *   Time-stamp: <2004/02/22 13:12:14 samuel>
- *   
- *	<emulation.S>
- *	
- *	Low-level emulation of some privileged instructions
- *   
  *   Copyright (C) 1997-2004 Samuel Rydh (samuel@ibrium.se)
+ *   Low-level emulation of some privileged instructions
  *   
  *   This program is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License

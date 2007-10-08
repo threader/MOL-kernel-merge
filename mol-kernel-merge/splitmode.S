@@ -1,12 +1,6 @@
 /* 
- *   Creation Date: <2000/07/11 03:38:32 samuel>
- *   Time-stamp: <2003/08/20 16:37:04 samuel>
- *   
- *	<splitmode.S>
- *	
- *	Handles splitmode (MSR_IR != MSR_DR)
- *   
  *   Copyright (C) 2000, 2001, 2002, 2003, 2004 Samuel Rydh (samuel@ibrium.se)
+ *   Handles splitmode (MSR_IR != MSR_DR)
  *   
  *   This program is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License

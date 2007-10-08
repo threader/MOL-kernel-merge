@@ -1,12 +1,6 @@
 /* 
- *   Creation Date: <2001/01/27 16:25:14 samuel>
- *   Time-stamp: <2004/03/07 21:58:48 samuel>
- *   
- *	<traps.S>
- *	
- *	Exception Vectors
- *   
  *   Copyright (C) 2000, 2001, 2002, 2003, 2004 Samuel Rydh (samuel@ibrium.se)
+ *   Exception Vectors
  *   
  *   This program is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License
@@ -147,7 +141,7 @@ MACRO(GET_INSTR_OPCODE, [dummy], [
 
 	// secondary interrupt entry (we _know_ this must be a DSI)
 #ifdef CONFIG_SMP
-	LOADI	r5,EXTERN(compat_hash_table_lock)
+	LOADI	r5,EXTERN(mmu_hash__lock)
 	li	r4,1
 	tophys	r5,r5
 7:	lwarx	r0,0,r5			// lock

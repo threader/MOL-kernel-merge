@@ -1,12 +1,6 @@
 /* 
- *   Creation Date: <2001/03/17 18:00:05 samuel>
- *   Time-stamp: <2003/05/26 00:08:48 samuel>
- *   
- *	<ptintercept.S>
- *	
- *	Handles writes to the (mac) hash table
- *   
  *   Copyright (C) 2001, 2002, 2003, 2004 Samuel Rydh (samuel@ibrium.se)
+ *   Handles writes to the (mac) hash table
  *   
  *   This program is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License

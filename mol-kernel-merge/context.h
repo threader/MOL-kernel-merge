@@ -1,9 +1,4 @@
 /* 
- *   Creation Date: <2004/01/25 17:48:51 samuel>
- *   Time-stamp: <2004/01/25 22:12:13 samuel>
- *   
- *	<context.h>
- *	
  *   Copyright (C) 2004 Samuel Rydh (samuel@ibrium.se)
  *   Copyright (C) 2007 Joseph Jezak (josejx@gentoo.org)
  *
@@ -16,7 +11,7 @@
 #ifndef _H_CONTEXT
 #define _H_CONTEXT
 
-#define MOL_CTX_MASK		0xfffff		/* VSID_MASK >> 4 */
+#define MOL_CTX_MASK		0xfffff	/* VSID_MASK >> 4 */
 
 /*
  * Three types of contexts are used:
@@ -45,18 +40,17 @@
 #define MOL_MUNGE_MUL_INVERSE	2899073
 #define MOL_MUNGE_ESID_ADD	0x111
 #define MOL_MUNGE_CONTEXT(c)	(((c) * (MOL_MUNGE_ADD_NEXT * 16)) & (MOL_CTX_MASK <<4))
-	
+
 #define MOL_CTX_TO_VSID(ctx)	(((ctx) * (MOL_MUNGE_ADD_NEXT * 16)) & (MOL_CTX_MASK << 4)) \
 				+ MOL_MUNGE_ESID_ADD * (mol_context & 0xf)
 
 /* mol_contexts == linux_context * 16 + esid */
-#define PER_SESSION_CONTEXTS	0x10000		/* more than we will need (10^6) */
+#define PER_SESSION_CONTEXTS	0x10000	/* more than we will need (10^6) */
 #define FIRST_MOL_CONTEXT(sess)	((MOL_CTX_MASK - PER_SESSION_CONTEXTS*((sess)+1)) << 4)
 #define LAST_MOL_CONTEXT(sess)	(((MOL_CTX_MASK - PER_SESSION_CONTEXTS*(sess)) << 4) | 0xf)
-
 
 #if FIRST_MOL_CONTEXT(MAX_NUM_SESSIONS-1) < (32768 << 4)
 #error "Too many MOL contexts..."
 #endif
 
-#endif   /* _H_CONTEXT */
+#endif				/* _H_CONTEXT */

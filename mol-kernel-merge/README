@@ -4,6 +4,9 @@ MOL kernel module into the kernel.
 Done:
  * Remove old kernel version code
  * Remove Darwin code
+ * Removed some header files
+ * Ran lindent on .c files
+ * Removed some dead code
 
 In Progress:
  * Tighten up code by removing functions that aren't needed
@@ -11,5 +14,7 @@ In Progress:
 
 TODO:
  * Review and remove unneded code (dead code, etc.)
+ * Remove code that's duplicated in the kernel
+ * Document and ensure that comments make sense
  * Review for kernel inclusion (checkpatch, etc.)
  * Probably lots more

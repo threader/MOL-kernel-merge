@@ -8,7 +8,7 @@ obj-$(CONFIG_MOL)	:= _fault.o _dev.o _misc.o _mmu.o _hostirq.o init.o hash.o \
 		   	   traps.o actions.o _performance.o 
 
 mol-objs	:= $(PERFOBJS_) _performance.o
-obj-y		:= _kuname.o mol.o 
+obj-y		:= mol.o 
 
 PERFOBJS	= $(addprefix $(obj)/, $(PERFOBJS_))
 MOL_ASMFLAGS	= $(CPPFLAGS) $(ASMFLAGS) $(INCLUDES) -D__ASSEMBLY__

@@ -1,12 +1,6 @@
 /* 
- *   Creation Date: <2001/06/21 17:10:35 samuel>
- *   Time-stamp: <2004/03/07 13:16:58 samuel>
- *   
- *	<dec.S>
- *	
- *	DEC / TimeBase stuff
- *   
  *   Copyright (C) 2001, 2002, 2003, 2004 Samuel Rydh (samuel@ibrium.se)
+ *   DEC / TimeBase stuff
  *   
  *   This program is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License
@@ -83,10 +77,6 @@ recalc_int_stamp:
 	// set_mol_dec 
 	//
 	// May modify: r0,r2-r5
-	//
-	// Old 2.4 kernels assume that linux-DEC never ticks faster
-	// than the DEC interval measured from TB. Unfortunately,
-	// it is virtually impossible to keep DEC/TB in sync.
 	//
 	// Experimentally, the "worst case" senario is a linux DEC tick
 	// beeing delayed 0.04 ms (to be compare with the 20 ms period).

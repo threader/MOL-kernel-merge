@@ -1,12 +1,6 @@
 /* 
- *   Creation Date: <2001/01/30 00:22:35 samuel>
- *   Time-stamp: <2004/03/07 13:33:39 samuel>
- *   
- *	<entry.S>
- *	
- *	Emulator/mac switching
- *   
  *   Copyright (C) 2001, 2002, 2003, 2004 Samuel Rydh (samuel@ibrium.se)
+ *   Linux/Emulator switching
  *   
  *   This program is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License
@@ -14,16 +8,14 @@
  *   
  */
 
-/* Short note about DEC. Due to the kernel implementation of the DEC 
- * exception handler (and get_time_of_day) in the 2.3/2.4 kernel, we 
- * must try to maintain coherency between DEC and TB. In any case, 
- * we must NEVER let DEC tick faster than TB, or get_time_of_day will 
+/* 
+ * We must NEVER let DEC tick faster than TB, or get_time_of_day will 
  * occasionally return bogus values (the result is usually 
  * misbehaving X).
  */
 	
 /************************************************************************/
-/*	Mac Entry							*/
+/*	Linux Entry							*/
 /************************************************************************/
 
 	//////////////////////////////////////////////////////////

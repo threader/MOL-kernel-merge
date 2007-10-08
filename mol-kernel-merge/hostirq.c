@@ -20,10 +20,8 @@
 #include "archinclude.h"
 #include "kernel_vars.h"
 #include "misc.h"
-#include "atomic.h"
 
-irqreturn_t
-hostirq_handler(int irq, void *pkv)
+irqreturn_t hostirq_handler(int irq, void *pkv)
 {
 	siginfo_t si;
 	kernel_vars_t *kv = (kernel_vars_t *) pkv;
@@ -32,7 +30,8 @@ hostirq_handler(int irq, void *pkv)
 	disable_irq_nosync(irq);
 	/* have the interrupt handled */
 	if (!test_and_set_bit(irq, kv->mregs.active_irqs.irqs))
-		atomic_inc_mol((mol_atomic_t *) &(kv->mregs.hostirq_active_cnt));
+		atomic_inc((atomic_t *) &
+			       (kv->mregs.hostirq_active_cnt));
 	kv->mregs.hostirq_update = 1;
 	kv->mregs.interrupt = 1;
 	/* signal the main thread (it might be DOZEing) */
@@ -42,63 +41,60 @@ hostirq_handler(int irq, void *pkv)
 		si.si_code = irq;
 		send_sig_info(SIGHUP, &si, kv->main_thread);
 	}
-	
+
 	return IRQ_HANDLED;
 }
 
 static char *molirqdescstring = "MOL irq mapping";
 
-int
-grab_host_irq(kernel_vars_t *kv, int irq)
+int grab_host_irq(kernel_vars_t * kv, int irq)
 {
 	int ret;
 
 	/* sanity check */
 	if (irq < 0 || irq >= NR_HOST_IRQS
-			|| check_bit_mol(irq, (char *) kv->mregs.mapped_irqs.irqs))
+	    || check_bit_mol(irq, (char *)kv->mregs.mapped_irqs.irqs))
 		return 0;
 
 	/* request the irq */
-	ret = request_irq(irq, hostirq_handler, IRQF_DISABLED | IRQF_SHARED, molirqdescstring, kv);
+	ret =
+	    request_irq(irq, hostirq_handler, IRQF_DISABLED | IRQF_SHARED,
+			molirqdescstring, kv);
 	if (!ret) {
-//		printk(KERN_INFO "mapped irq line %d\n", irq);
-		set_bit_mol(irq, (char *) kv->mregs.mapped_irqs.irqs);
+//              printk(KERN_INFO "mapped irq line %d\n", irq);
+		set_bit_mol(irq, (char *)kv->mregs.mapped_irqs.irqs);
 	}
 
 	return ret;
 }
 
-int
-release_host_irq(kernel_vars_t *kv, int irq)
+int release_host_irq(kernel_vars_t * kv, int irq)
 {
 	/* sanity check */
 	if (irq < 0 || irq >= NR_HOST_IRQS
-			|| !check_bit_mol(irq, (char *) kv->mregs.mapped_irqs.irqs))
+	    || !check_bit_mol(irq, (char *)kv->mregs.mapped_irqs.irqs))
 		return 0;
 
-	clear_bit_mol(irq, (char *) kv->mregs.mapped_irqs.irqs);
+	clear_bit_mol(irq, (char *)kv->mregs.mapped_irqs.irqs);
 	disable_irq(irq);
 	free_irq(irq, kv);
 
 	return 1;
 }
 
-void
-init_host_irqs(kernel_vars_t *kv)
+void init_host_irqs(kernel_vars_t * kv)
 {
 	memset(&(kv->mregs.mapped_irqs), 0, sizeof(kv->mregs.mapped_irqs));
 	kv->main_thread = current;
 	kv->mregs.hostirq_update = 0;
 }
 
-void
-cleanup_host_irqs(kernel_vars_t *kv)
+void cleanup_host_irqs(kernel_vars_t * kv)
 {
 	int n;
 
 	for (n = 0; n < NR_HOST_IRQS; n++) {
-		if (check_bit_mol(n, (char *) kv->mregs.mapped_irqs.irqs))
+		if (check_bit_mol(n, (char *)kv->mregs.mapped_irqs.irqs))
 			release_host_irq(kv, n);
 	}
 }
-

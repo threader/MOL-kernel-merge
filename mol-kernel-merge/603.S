@@ -1,12 +1,6 @@
 /* 
- *   Creation Date: <2001/06/15 20:10:49 samuel>
- *   Time-stamp: <2001/06/16 15:35:22 samuel>
- *   
- *	<603.S>
- *	
- *	603 MMU support
- *   
  *   Copyright (C) 2001 Samuel Rydh (samuel@ibrium.se)
+ *   603 MMU support
  *   
  *   This program is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License
