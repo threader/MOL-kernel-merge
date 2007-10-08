@@ -1,12 +1,7 @@
 /* 
- *   Creation Date: <97/07/26 18:23:02 samuel>
- *   Time-stamp: <2002/07/06 12:12:10 samuel>
- *   
- *	<iopage.S>
- *	
- *	IO low-level support
- *   
  *   Copyright (C) 2002 Samuel Rydh (samuel@ibrium.se)
+ *   IO low-level support
+ *   
  *   
  *   This program is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License

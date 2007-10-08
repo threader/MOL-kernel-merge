@@ -1,12 +1,6 @@
 /* 
- *   Creation Date: <2003/01/24 13:54:52 samuel>
- *   Time-stamp: <2003/08/14 03:12:00 samuel>
- *   
- *	<emuaccel.S>
- *	
- *	Emulation acceleration
- *   
  *   Copyright (C) 2003, 2004 Samuel Rydh (samuel@ibrium.se)
+ *   Emulation acceleration
  *   
  *   This program is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License

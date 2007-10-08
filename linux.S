@@ -1,12 +1,6 @@
 /* 
- *   Creation Date: <2001/02/24 14:08:28 samuel>
- *   Time-stamp: <2003/09/03 12:34:20 samuel>
- *   
- *	<platform.S>
- *	
- *	Linux Kernel Hooks
- *   
  *   Copyright (C) 2001, 2002, 2003 Samuel Rydh (samuel@ibrium.se)
+ *   Linux Kernel Hooks
  *   
  *   This program is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License
@@ -21,9 +15,8 @@
 	//
 	//    r3:	context
 	//    r4:	virtual address
-	//    r5:	2.4.6	pointer to linux PTE (2.4.6 or later)
-	//		2.6	pmdval
-	//    r6:	2.6	count
+	//    r5:	pmdval
+	//    r6:	count
 	//    r10:	return address
 	//
 	// [must not modify: r3-r5,r10 - otherwise normal C-function]

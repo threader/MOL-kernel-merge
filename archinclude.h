@@ -1,11 +1,4 @@
 /* 
- *   Creation Date: <2002/01/12 22:11:51 samuel>
- *   Time-stamp: <2004/04/10 22:27:41 samuel>
- *   
- *	<archinclude.h>
- *	
- *	
- *   
  *   Copyright (C) 2002, 2003, 2004 Samuel Rydh (samuel@ibrium.se)
  *   
  *   This program is free software; you can redistribute it and/or
@@ -17,9 +10,10 @@
 #ifndef _H_ARCHINCLUDE
 #define _H_ARCHINCLUDE
 
+/* FIXME - Turn into options */
 //#define PERF_MONITOR
-//#define PERFORMANCE_INFO	     	/* collect performance statistics */
-//#define PERFORMANCE_INFO_LIGHT	/* sample only the most important counters */
+//#define PERFORMANCE_INFO              /* collect performance statistics */
+//#define PERFORMANCE_INFO_LIGHT        /* sample only the most important counters */
 
 #include "mol_config.h"
 #include "kconfig.h"
@@ -32,17 +26,7 @@
 #include <linux/sched.h>	/* needed by <asm/mmu_context.h> */
 #include <asm/mmu_context.h>
 #include <asm/time.h>
-
 #include "dbg.h"
+#endif				/* __ASSEMBLY__ */
 
-/* these are declared, but we just want to be sure the definition does not change */
-extern int flush_hash_pages( unsigned context, unsigned long va, unsigned long pmdval, int count ); /* 2.6 */
-#endif /* __ASSEMBLY__ */
-
-#define compat_flush_hash_pages		flush_hash_pages
-#define compat_hash_table_lock		mmu_hash_lock
-
-#define	ENOSYS_MOL			ENOSYS
-#define EFAULT_MOL			EFAULT
-
-#endif   /* _H_ARCHINCLUDE */
+#endif				/* _H_ARCHINCLUDE */

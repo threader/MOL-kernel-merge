@@ -1,12 +1,6 @@
-/* -*-c-*-
- *   Creation Date: <2001/10/20 17:51:10 samuel>
- *   Time-stamp: <2004/02/21 21:38:27 samuel>
- *   
- *	<asm_offsets.inc>
- *	
- *	Extra offsets (included from asm_offsets.c)
- *   
+/*
  *   Copyright (C) 2001, 2002, 2003, 2004 Samuel Rydh (samuel@ibrium.se)
+ *   Extra offsets (included from asm_offsets.c)
  *   
  *   This program is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License
