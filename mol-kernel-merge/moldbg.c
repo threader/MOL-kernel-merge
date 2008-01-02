@@ -7,8 +7,7 @@
  *   
  */
 
-#include "archinclude.h"
-
+/* FIXME - cleanup */
 #ifdef CONFIG_MOL_HOSTED
 #include "kernel_vars.h"
 #include "misc.h"

@@ -9,14 +9,11 @@
  *   
  */
 
-#include "archinclude.h"
-#include "alloc.h"
 #include "kernel_vars.h"
 #include "mmu.h"
-#include "misc.h"
-#include "mtable.h"
 #include "performance.h"
-#include "processor.h"
+#include "mtable.h"
+#include "misc.h"
 
 #define MAX_BLOCK_TRANS		6
 
@@ -32,7 +29,7 @@
  */
 
 typedef struct {
-	ulong mbase;
+	unsigned long mbase;
 	char *lvbase;
 	pte_lvrange_t *lvrange;
 
@@ -73,7 +70,7 @@ void cleanup_mmu_io(kernel_vars_t * kv)
 
 	for (p2 = iod->io_page_head; p2; p2 = next2) {
 		next2 = p2->next;
-		free_page((ulong) p2);
+		free_page((unsigned long) p2);
 	}
 	iod->io_page_head = 0;
 
@@ -93,10 +90,10 @@ void cleanup_mmu_io(kernel_vars_t * kv)
 }
 
 /* This is primarily intended for framebuffers */
-static int bat_align(int flags, ulong ea, ulong lphys, ulong size, ulong bat[2])
+static int bat_align(int flags, unsigned long ea, unsigned long lphys, unsigned long size, unsigned long bat[2])
 {
-	ulong s;
-	ulong offs1, offs2;
+	unsigned long s;
+	unsigned long offs1, offs2;
 
 	s = 0x20000;		/* 128K */
 	if (s > size)
@@ -133,7 +130,7 @@ static int bat_align(int flags, ulong ea, ulong lphys, ulong size, ulong bat[2])
  * blocks to linux virtual physical addresses)
  */
 static int
-add_block_trans(kernel_vars_t * kv, ulong mbase, char *lvbase, ulong size,
+add_block_trans(kernel_vars_t * kv, unsigned long mbase, char *lvbase, unsigned long size,
 		int flags)
 {
 	DECLARE_IOD;
@@ -165,8 +162,8 @@ add_block_trans(kernel_vars_t * kv, ulong mbase, char *lvbase, ulong size,
 
 	/* IMPORTANT: DBATs can _only_ be used when we KNOW that ea == mphys. */
 	if ((flags & MAPPING_DBAT)) {
-		ulong bat[2];
-		if (!bat_align(flags, mbase, (ulong) lvbase, size, bat)) {
+		unsigned long bat[2];
+		if (!bat_align(flags, mbase, (unsigned long) lvbase, size, bat)) {
 			/* printk("BATS: %08lX %08lX\n", bat[0], bat[1] ); */
 			MMU.transl_dbat0.word[0] = bat[0];
 			MMU.transl_dbat0.word[1] = bat[1];
@@ -241,11 +238,11 @@ static void remove_block_trans(kernel_vars_t * kv, int id)
 /* adds an I/O-translation. It is legal to add the same
  * range multiple times (for instance, to alter usr_data)
  */
-int add_io_trans(kernel_vars_t * kv, ulong mbase, int size, void *usr_data)
+int add_io_trans(kernel_vars_t * kv, unsigned long mbase, int size, void *usr_data)
 {
 	DECLARE_IOD;
 	io_page_t *ip, **pre_next;
-	ulong mb;
+	unsigned long mb;
 	int i, num;
 
 	/* align mbase and size to double word boundarys */
@@ -289,11 +286,11 @@ int add_io_trans(kernel_vars_t * kv, ulong mbase, int size, void *usr_data)
 	return 0;
 }
 
-int remove_io_trans(kernel_vars_t * kv, ulong mbase, int size)
+int remove_io_trans(kernel_vars_t * kv, unsigned long mbase, int size)
 {
 	DECLARE_IOD;
 	io_page_t *ip, **pre_next;
-	ulong mb;
+	unsigned long mb;
 	int i, num;
 
 	/* To remove an unused IO-page, we must make sure there are no
@@ -347,7 +344,7 @@ int remove_io_trans(kernel_vars_t * kv, ulong mbase, int size)
 			/* Free page (XXX: Remove page fram hash, see above ) */
 			*pre_next = ip->next;
 			ip->magic2 = ip->magic = 0;	/* IMPORTANT */
-			free_page((ulong) ip);
+			free_page((unsigned long) ip);
 		}
 	}
 	return 0;
@@ -366,7 +363,7 @@ int remove_io_trans(kernel_vars_t * kv, ulong mbase, int size)
  */
 
 int
-mphys_to_pte(kernel_vars_t * kv, ulong mphys, ulong * the_pte1, int is_write,
+mphys_to_pte(kernel_vars_t * kv, unsigned long mphys, unsigned long * the_pte1, int is_write,
 	     pte_lvrange_t ** lvrange)
 {
 	DECLARE_IOD;
@@ -391,7 +388,7 @@ mphys_to_pte(kernel_vars_t * kv, ulong mphys, ulong * the_pte1, int is_write,
 
 	/* check for a block mapping. */
 	for (p = iod->btable, i = 0; i < num_btrans; i++, p++) {
-		if (mphys - p->mbase < (ulong) p->size) {
+		if (mphys - p->mbase < (unsigned long) p->size) {
 			if ((p->flags & MAPPING_SCRATCH)) {
 				/* it is OK to return silently if we run out of memory */
 				if (!scratch_page && !(scratch_page = (char *)get_zeroed_page(GFP_KERNEL)))
@@ -399,7 +396,7 @@ mphys_to_pte(kernel_vars_t * kv, ulong mphys, ulong * the_pte1, int is_write,
 				pte1 |= virt_to_phys(scratch_page);
 			} else
 				pte1 |=
-				    (mphys - p->mbase + (ulong) p->lvbase) & PTE1_RPN;
+				    (mphys - p->mbase + (unsigned long) p->lvbase) & PTE1_RPN;
 
 			if (p->flags & MAPPING_FORCE_CACHE) {
 				/* use write through for now */

@@ -18,12 +18,12 @@ extern int mmu_hash_lock;
 
 static inline void __tlbie(int ea)
 {
-	register ulong _ea __asm__("r3");
-	register ulong _lock __asm__("r7");
-	register ulong _func __asm__("r9");
+	register unsigned long _ea __asm__("r3");
+	register unsigned long _lock __asm__("r7");
+	register unsigned long _func __asm__("r9");
 
-	_func = (ulong) xx_tlbie_lowmem;
-	_lock = (ulong) & mmu_hash_lock;
+	_func = (unsigned long) xx_tlbie_lowmem;
+	_lock = (unsigned long) & mmu_hash_lock;
 	_ea = ea;
 
 	asm volatile ("mtctr	9		\n" "li	8,0x1235	\n"	/* lock value */
@@ -36,19 +36,19 @@ static inline void __tlbie(int ea)
 
 static inline void __store_PTE(int ea, unsigned long *slot, int pte0, int pte1)
 {
-	register ulong _ea __asm__("r3");
-	register ulong _pte_slot __asm__("r4");
-	register ulong _pte0 __asm__("r5");
-	register ulong _pte1 __asm__("r6");
-	register ulong _lock __asm__("r7");
-	register ulong _func __asm__("r9");
+	register unsigned long _ea __asm__("r3");
+	register unsigned long _pte_slot __asm__("r4");
+	register unsigned long _pte0 __asm__("r5");
+	register unsigned long _pte1 __asm__("r6");
+	register unsigned long _lock __asm__("r7");
+	register unsigned long _func __asm__("r9");
 
-	_func = (ulong) xx_store_pte_lowmem;
+	_func = (unsigned long) xx_store_pte_lowmem;
 	_ea = ea;
-	_pte_slot = (ulong) slot;
+	_pte_slot = (unsigned long) slot;
 	_pte0 = pte0;
 	_pte1 = pte1;
-	_lock = (ulong) & mmu_hash_lock;
+	_lock = (unsigned long) & mmu_hash_lock;
 
 	asm volatile ("mtctr	9		\n" "li	8,0x1234	\n"	/* lock value */
 		      "mfmsr	10		\n" "rlwinm	0,10,0,17,15	\n"	/* clear MSR_EE */
@@ -68,7 +68,7 @@ static inline void __tlbie(int ea)
 
 static inline void __store_PTE(int ea, unsigned long *slot, int pte0, int pte1)
 {
-	ulong flags;
+	unsigned long flags;
 	local_irq_save(flags);
 	(*xx_store_pte_lowmem) (slot, pte0, pte1);
 	local_irq_restore(flags);

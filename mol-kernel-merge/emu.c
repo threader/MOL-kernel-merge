@@ -8,19 +8,13 @@
  *   
  */
 
-#include "archinclude.h"
-#include "alloc.h"
-#include "mmu.h"
 #include "kernel_vars.h"
-#include "emu.h"
-#include "asmfuncs.h"
-#include "rvec.h"
-#include "processor.h"
+#include "map.h"
 #include "mtable.h"
 #include "performance.h"
+#include "rvec.h"
 #include "emuaccel_sh.h"
-#include "misc.h"
-#include "map.h"
+#include "asmfuncs.h"
 
 #define BAT_PERFORMANCE_HACK
 // #define DEBUG
@@ -42,9 +36,9 @@
 #define MREGS	(kv->mregs)
 #define MMU	(kv->mmu)
 
-int do_mtsdr1(kernel_vars_t * kv, ulong value)
+int do_mtsdr1(kernel_vars_t * kv, unsigned long value)
 {
-	ulong mbase, mask;
+	unsigned long mbase, mask;
 	int s;
 
 	MREGS.spr[S_SDR1] = value;
@@ -98,7 +92,7 @@ int do_mtsdr1(kernel_vars_t * kv, ulong value)
 /* This function is _very_ slow, since it must destroy a lot of PTEs.
  * Fortunately, BAT-maps are normally static.
  */
-int do_mtbat(kernel_vars_t * kv, int sprnum, ulong value, int force)
+int do_mtbat(kernel_vars_t * kv, int sprnum, unsigned long value, int force)
 {
 	mac_bat_t *d;
 	int batnum;
@@ -149,17 +143,17 @@ int do_mtbat(kernel_vars_t * kv, int sprnum, ulong value, int force)
 /*	Emulation acceleration						*/
 /************************************************************************/
 
-static ulong lookup_emuaccel_handler(int emuaccel)
+static unsigned long lookup_emuaccel_handler(int emuaccel)
 {
-	extern ulong emuaccel_table[];
-	ulong handler, *p = emuaccel_table;
+	extern unsigned long emuaccel_table[];
+	unsigned long handler, *p = emuaccel_table;
 
 	for (; p[0]; p += 3) {
 		if ((emuaccel & EMUACCEL_INST_MASK) != p[0])
 			continue;
 		emuaccel &= p[2];	/* offset mask */
-		handler = p[1] + (ulong) emuaccel_table + emuaccel * 8;
-		return virt_to_phys((ulong *) reloc_ptr(handler));
+		handler = p[1] + (unsigned long) emuaccel_table + emuaccel * 8;
+		return virt_to_phys((unsigned long *) reloc_ptr(handler));
 	}
 	return 0;
 }
@@ -167,8 +161,8 @@ static ulong lookup_emuaccel_handler(int emuaccel)
 int
 alloc_emuaccel_slot(kernel_vars_t * kv, int emuaccel, int param, int inst_addr)
 {
-	ulong *p = (ulong *) ((char *)kv->emuaccel_page + kv->emuaccel_size);
-	ulong handler = lookup_emuaccel_handler(emuaccel);
+	unsigned long *p = (unsigned long *) ((char *)kv->emuaccel_page + kv->emuaccel_size);
+	unsigned long handler = lookup_emuaccel_handler(emuaccel);
 	int size, ret;
 
 	size = (emuaccel & EMUACCEL_HAS_PARAM) ? 16 : 8;
@@ -191,7 +185,7 @@ alloc_emuaccel_slot(kernel_vars_t * kv, int emuaccel, int param, int inst_addr)
 int mapin_emuaccel_page(kernel_vars_t * kv, int mphys)
 {
 	int i, handler;
-	ulong *p;
+	unsigned long *p;
 
 	if (kv->emuaccel_page || (mphys & 0xfff))
 		return 0;
@@ -201,7 +195,7 @@ int mapin_emuaccel_page(kernel_vars_t * kv, int mphys)
 
 	kv->emuaccel_page_phys = virt_to_phys((char *)kv->emuaccel_page);
 	kv->emuaccel_mphys = mphys;
-	p = (ulong *) kv->emuaccel_page;
+	p = (unsigned long *) kv->emuaccel_page;
 
 	handler = lookup_emuaccel_handler(EMUACCEL_NOP);
 	for (i = 0; i < 0x1000 / sizeof(int); i += 2) {

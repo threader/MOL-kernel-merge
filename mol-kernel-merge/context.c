@@ -8,22 +8,17 @@
  *   
  */
 
-#include "archinclude.h"
-#include "alloc.h"
-#include "mmu.h"
-#include "mmu_contexts.h"
-#include "misc.h"
-#include "asmfuncs.h"
-#include "emu.h"
-#include "mtable.h"
-#include "performance.h"
-#include "context.h"
+#include "kernel_vars.h"
 #include "hash.h"
+#include "context.h"
+#include "asmfuncs.h"
+#include "mtable.h"
+#include "mmu.h"
 
 static int flush_all_PTEs(kernel_vars_t * kv)
 {
 	int i, count = 0, npte = (ptehash.pte_mask + 8) / 8;
-	ulong *pte, ea, v;
+	unsigned long *pte, ea, v;
 
 	for (pte = ptehash.base, i = 0; i < npte; i++, pte += 2) {
 		v = *pte;
@@ -34,8 +29,8 @@ static int flush_all_PTEs(kernel_vars_t * kv)
 		     ((v & 0xf) * MOL_MUNGE_ESID_ADD)) * MOL_MUNGE_MUL_INVERSE;
 		v = (v >> 4) & MOL_CTX_MASK;
 
-		if (v >= (kb->mmu).first_mol_context
-		    && v <= (kb->mmu).last_mol_context) {
+		if (v >= (kv->mmu).first_mol_context
+		    && v <= (kv->mmu).last_mol_context) {
 			*pte = 0;
 			count++;
 		}
@@ -53,11 +48,11 @@ static int flush_all_PTEs(kernel_vars_t * kv)
 
 int init_contexts(kernel_vars_t * kv)
 {
-	(kb->mmu).first_mol_context = FIRST_MOL_CONTEXT(kv->session_index);
-	(kb->mmu).last_mol_context = LAST_MOL_CONTEXT(kv->session_index);
-	(kb->mmu).next_mol_context = (kb->mmu).first_mol_context;
+	(kv->mmu).first_mol_context = FIRST_MOL_CONTEXT(kv->session_index);
+	(kv->mmu).last_mol_context = LAST_MOL_CONTEXT(kv->session_index);
+	(kv->mmu).next_mol_context = (kv->mmu).first_mol_context;
 
-	(kb->mmu).illegal_sr = alloc_context(kv) | VSID_Kp | VSID_N;
+	(kv->mmu).illegal_sr = alloc_context(kv) | VSID_Kp | VSID_N;
 
 	flush_all_PTEs(kv);
 	return 0;
@@ -70,7 +65,7 @@ void cleanup_contexts(kernel_vars_t * kv)
 
 void handle_context_wrap(kernel_vars_t * kv, int n)
 {
-	if ((kb->mmu).next_mol_context + n > (kb->mmu).last_mol_context) {
+	if ((kv->mmu).next_mol_context + n > (kv->mmu).last_mol_context) {
 		printk(KERN_NOTICE "MOL context wrap\n");
 
 		clear_all_vsids(kv);
@@ -80,7 +75,7 @@ void handle_context_wrap(kernel_vars_t * kv, int n)
 
 int alloc_context(kernel_vars_t * kv)
 {
-	int mol_context = (kb->mmu).next_mol_context++;
-	vsid = MOL_CTX_TO_VSID(mol_context >> 4);
+	int mol_context = (kv->mmu).next_mol_context++;
+	int vsid = MOL_CTX_TO_VSID(mol_context >> 4);
 	return (vsid & VSID_MASK);
 }

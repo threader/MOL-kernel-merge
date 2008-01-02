@@ -14,16 +14,15 @@
  *   
  */
 
-#include "archinclude.h"
-#include "alloc.h"
-#include "mmu.h"
+#include <linux/types.h>
+#include "kernel_vars.h"
 
 typedef struct tracker_data {
 	char *table;
 	size_t table_size;
 
 	int npages;
-	ulong lvbase;
+	unsigned long lvbase;
 } tracker_data_t;
 
 #define MMU		(kv->mmu)
@@ -50,7 +49,7 @@ void cleanup_mmu_tracker(kernel_vars_t * kv)
 
 int track_lvrange(kernel_vars_t * kv)
 {
-	ulong lvbase = MMU.userspace_ram_base;
+	unsigned long lvbase = MMU.userspace_ram_base;
 	int size = MMU.ram_size;
 
 	DECLARE_TS;
@@ -67,7 +66,7 @@ int track_lvrange(kernel_vars_t * kv)
 	ts->npages = size >> 12;
 	ts->table_size = (ts->npages + 7) / 8;
 	ts->lvbase = lvbase;
-	if (!(ts->table = vmalloc_mol(ts->table_size))) {
+	if (!(ts->table = vmalloc(ts->table_size))) {
 		cleanup_mmu_tracker(kv);
 		return 1;
 	}
@@ -75,7 +74,7 @@ int track_lvrange(kernel_vars_t * kv)
 	return 0;
 }
 
-void lvpage_dirty(kernel_vars_t * kv, ulong lvbase)
+void lvpage_dirty(kernel_vars_t * kv, unsigned long lvbase)
 {
 	DECLARE_TS;
 	int pgindex;

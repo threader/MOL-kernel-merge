@@ -10,16 +10,20 @@
  *   version 2
  *   
  */
-#include <linux/version.h>
+
+#include "kernel_vars.h"
 #include <linux/interrupt.h>
 #include <linux/irq.h>
+#include "misc.h"
+
+/*
+#include <linux/version.h>
 #include <linux/sched.h>
 #include <linux/bitops.h>
 #include <asm/atomic.h>
 
 #include "archinclude.h"
-#include "kernel_vars.h"
-#include "misc.h"
+*/
 
 irqreturn_t hostirq_handler(int irq, void *pkv)
 {

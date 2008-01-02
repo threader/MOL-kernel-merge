@@ -1,4 +1,6 @@
 /* 
+ *   MOL Kernel Module functions
+ *
  *   Copyright (C) 2003, 2004 Samuel Rydh (samuel@ibrium.se)
  *   
  *   This program is free software; you can redistribute it and/or
@@ -7,23 +9,21 @@
  *   
  */
 
-#include "archinclude.h"
 #include <linux/module.h>
-#include <linux/miscdevice.h>
-#include <linux/spinlock.h>
 #include <linux/init.h>
+#include <asm/prom.h>
+#include <asm/time.h>
+#include <asm/uaccess.h>
 #include <linux/interrupt.h>
 #include <linux/irq.h>
-#include <linux/bitops.h>
-#include <asm/prom.h>
-#include <asm/machdep.h>
-#include <asm/atomic.h>
-#include "kernel_vars.h"
-#include "mol-ioctl.h"
+#include <linux/miscdevice.h>
+
+#include "ioctl.h"
 #include "version.h"
-#include "mmu.h"
+#include "kernel_vars.h"
 #include "misc.h"
 #include "mtable.h"
+#include "mmu.h"
 
 MODULE_AUTHOR("Samuel Rydh <samuel@ibrium.se>");
 MODULE_DESCRIPTION("Mac-on-Linux kernel module");
@@ -67,7 +67,7 @@ static int find_physical_rom(int *base, int *size)
 			return 0;
 	}
 	do {
-		if (!(p = (int *)get_property(dn, "reg", &len))
+		if (!(p = (int *)of_get_property(dn, "reg", &len))
 		    || len != sizeof(int[2])) {
 			of_node_put(dn);
 			return 0;
@@ -177,7 +177,7 @@ arch_handle_ioctl(kernel_vars_t * kv, int cmd, int p1, int p2, int p3)
 		return get_irqs(kv, (irq_bitfield_t *) p1);
 
 	case MOL_IOCTL_GET_DIRTY_FBLINES:	/* short *retbuf, int size -- npairs */
-		if (compat_verify_area(VERIFY_WRITE, (short *)p1, p2))
+		if (!access_ok(VERIFY_WRITE, (short *)p1, p2))
 			break;
 		ret = get_dirty_fb_lines(kv, (short *)p1, p2);
 		break;
@@ -203,7 +203,7 @@ arch_handle_ioctl(kernel_vars_t * kv, int cmd, int p1, int p2, int p3)
 		break;
 
 	case MOL_IOCTL_SET_RAM:	/* void ( char *lvbase, size_t size ) */
-		if (compat_verify_area(VERIFY_WRITE, (char *)p1, p2))
+		if (!access_ok(VERIFY_WRITE, (char *)p1, p2))
 			break;
 		ret = 0;
 		kv->mmu.userspace_ram_base = p1;

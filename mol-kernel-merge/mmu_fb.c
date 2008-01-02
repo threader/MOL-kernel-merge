@@ -8,21 +8,17 @@
  *   
  */
 
-#include "archinclude.h"
-#include "alloc.h"
-#include "uaccess.h"
-#include "mmu.h"
-#include "asmfuncs.h"
+#include "kernel_vars.h"
 #include "performance.h"
-#include "misc.h"
+#include "tlbie.h"
 
 typedef struct line_entry {
 	short y1, y2;
 	int dirty;
-	ulong *slot;
-	ulong pte0;
-	ulong pte1;
-	ulong ea;
+	unsigned long *slot;
+	unsigned long pte0;
+	unsigned long pte1;
+	unsigned long ea;
 } line_entry_t;
 
 typedef struct fb_data {
@@ -53,8 +49,8 @@ void cleanup_mmu_fb(kernel_vars_t * kv)
 }
 
 void
-video_pte_inserted(kernel_vars_t * kv, ulong lvptr, ulong * slot, ulong pte0,
-		   ulong pte1, ulong ea)
+video_pte_inserted(kernel_vars_t * kv, unsigned long lvptr, unsigned long * slot, unsigned long pte0,
+		   unsigned long pte1, unsigned long ea)
 {
 	DECLARE_FB;
 	int i;
@@ -62,7 +58,7 @@ video_pte_inserted(kernel_vars_t * kv, ulong lvptr, ulong * slot, ulong pte0,
 	if (!fb)
 		return;
 
-	i = (lvptr - (ulong) fb->lv_base) >> 12;
+	i = (lvptr - (unsigned long) fb->lv_base) >> 12;
 	if (i >= 0 && i < fb->nrec) {
 		line_entry_t *p = &fb->line_table[i];
 
@@ -91,7 +87,7 @@ setup_fb_acceleration(kernel_vars_t * kv, char *lvbase, int bytes_per_row,
 		      int height)
 {
 	DECLARE_FB;
-	int i, offs = (ulong) lvbase & 0xfff;
+	int i, offs = (unsigned long) lvbase & 0xfff;
 	line_entry_t *p;
 
 	if (fb)
@@ -104,14 +100,14 @@ setup_fb_acceleration(kernel_vars_t * kv, char *lvbase, int bytes_per_row,
 	MMU.fb_data = fb;
 
 	fb->nrec = (bytes_per_row * height + offs + 0xfff) >> 12;
-	if (!(p = (line_entry_t *) vmalloc_mol(sizeof(line_entry_t) * fb->nrec))) {
+	if (!(p = (line_entry_t *) vmalloc(sizeof(line_entry_t) * fb->nrec))) {
 		cleanup_mmu_fb(kv);
 		return;
 	}
 	memset(p, 0, sizeof(line_entry_t) * fb->nrec);
 	fb->line_table = p;
 
-	fb->lv_base = (char *)((ulong) lvbase & ~0xfff);
+	fb->lv_base = (char *)((unsigned long) lvbase & ~0xfff);
 	for (i = 0; i < fb->nrec; i++, p++) {
 		p->y1 = (0x1000 * i - offs) / bytes_per_row;
 		p->y2 = (0x1000 * (i + 1) - 1 - offs) / bytes_per_row;
