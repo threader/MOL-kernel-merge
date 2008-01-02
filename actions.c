@@ -9,19 +9,19 @@
  *   
  */
 
-#include "archinclude.h"
-#include "alloc.h"
+#include <linux/kernel.h>
+
 #include "kernel_vars.h"
-#include "misc.h"
-#include "asmfuncs.h"
-#include "actions.h"
 #include "map.h"
+#include "actions.h"
+#include "asmfuncs.h"
+#include "misc.h"
 
 /* globals */
 int reloc_virt_offs;
 
 static char *code_base;
-static uint code_size;
+static unsigned int code_size;
 
 /* some opcodes */
 #define OPCODE_ADDIS( dreg, sreg, hi_val )	((15<<26) | ((dreg)<<21) | ((sreg)<<16) | (hi_val))
@@ -45,27 +45,27 @@ typedef struct {
 	int alloc_size;
 	int alloc_method;
 
-	ulong *inst_addr;	/* These fields are used */
-	ulong opcode;		/* by the hook code */
+	unsigned long *inst_addr;	/* These fields are used */
+	unsigned long opcode;		/* by the hook code */
 } cleanup_entry_t;
 
 static int num_cleanup_entries;
 static cleanup_entry_t cleanup_table[MAX_NUM_CLEANUP_HANDLERS];
-static ulong lowmem_phys_cursor;
+static unsigned long lowmem_phys_cursor;
 
 /* Memory mapping of exception vectors */
-static ulong lowmem_phys_base;
+static unsigned long lowmem_phys_base;
 static char *lowmem_virt_base;
 static void *lowmem_mapping;
 
-static inline ulong *lowmem_phys_to_virt(ulong paddr)
+static inline unsigned long *lowmem_phys_to_virt(unsigned long paddr)
 {
-	return (ulong *) (lowmem_virt_base + (paddr - lowmem_phys_base));
+	return (unsigned long *) (lowmem_virt_base + (paddr - lowmem_phys_base));
 }
 
-static inline ulong lowmem_tophys(void *vaddr)
+static inline unsigned long lowmem_tophys(void *vaddr)
 {
-	return lowmem_phys_base + ((ulong) vaddr - (ulong) lowmem_virt_base);
+	return lowmem_phys_base + ((unsigned long) vaddr - (unsigned long) lowmem_virt_base);
 }
 
 static void lowmem_initialize(void)
@@ -85,7 +85,7 @@ static void lowmem_initialize(void)
 
 static char *lowmem_alloc(int size, cleanup_entry_t ** ret_ce)
 {
-	ulong *pstart;
+	unsigned long *pstart;
 	cleanup_entry_t ce;
 	int found = 0;
 
@@ -103,16 +103,16 @@ static char *lowmem_alloc(int size, cleanup_entry_t ** ret_ce)
 		size = 0x10;
 
 	pstart = lowmem_phys_to_virt(lowmem_phys_cursor);
-	pstart = (ulong *) (((ulong) pstart + 0xf) & ~0xf);
+	pstart = (unsigned long *) (((unsigned long) pstart + 0xf) & ~0xf);
 	for (; lowmem_phys_cursor < 0x3000; lowmem_phys_cursor += 4) {
-		ulong *p = lowmem_phys_to_virt(lowmem_phys_cursor);
+		unsigned long *p = lowmem_phys_to_virt(lowmem_phys_cursor);
 		if (((int)p - (int)pstart) >= size) {
 			found = 1;
 			break;
 		}
 		if (*p) {
 			pstart =
-			    (ulong *) (((ulong) p + sizeof(ulong) + 0xf) &
+			    (unsigned long *) (((unsigned long) p + sizeof(unsigned long) + 0xf) &
 				       ~0xf);
 			continue;
 		}
@@ -126,7 +126,7 @@ static char *lowmem_alloc(int size, cleanup_entry_t ** ret_ce)
 	ce.lowmem_addr = (char *)pstart;
 	ce.alloc_method = 0;
 	ce.alloc_size = size;
-	/* printk("lowmem-alloc SPACE %X bytes at %08lX\n", size, (ulong)pstart ); */
+	/* printk("lowmem-alloc SPACE %X bytes at %08lX\n", size, (unsigned long)pstart ); */
 
 	cleanup_table[num_cleanup_entries] = ce;
 	if (ret_ce)
@@ -176,9 +176,9 @@ static action_pb_t *find_action(int action, int index)
 	return NULL;
 }
 
-static int relocate_inst(ulong * opc_ptr, ulong from, ulong to)
+static int relocate_inst(unsigned long * opc_ptr, unsigned long from, unsigned long to)
 {
-	ulong opcode = *opc_ptr;
+	unsigned long opcode = *opc_ptr;
 	int offs = -1;
 
 	/* XXX: UNTESTED if target instruction is a branch */
@@ -220,12 +220,12 @@ static int relocate_inst(ulong * opc_ptr, ulong from, ulong to)
 /*	actions								*/
 /************************************************************************/
 
-typedef int (*action_func_t) (int action, ulong * target, const int *pb);
+typedef int (*action_func_t) (int action, unsigned long * target, const int *pb);
 
-static int action_li_phys(int action, ulong * target, const int *pb)
+static int action_li_phys(int action, unsigned long * target, const int *pb)
 {
 	int r = pb[0] & 0x1f;
-	ulong addr = pb[1] + virt_to_phys(code_base);
+	unsigned long addr = pb[1] + virt_to_phys(code_base);
 
 	/* target[0] = addis r,0,addr@h ; target[1] = ori r,r,addr@l */
 	target[0] = (15 << 26) | (r << 21) | (addr >> 16);
@@ -235,9 +235,9 @@ static int action_li_phys(int action, ulong * target, const int *pb)
 	return 0;
 }
 
-static int action_lwz_physaddr_r(int action, ulong * target, const int *pb)
+static int action_lwz_physaddr_r(int action, unsigned long * target, const int *pb)
 {
-	ulong addr = pb[1] + virt_to_phys(code_base);
+	unsigned long addr = pb[1] + virt_to_phys(code_base);
 	int dr = (pb[0] >> 5) & 0x1f;
 	int r = pb[0] & 0x1f;
 	short low = (addr & 0xffff);
@@ -250,10 +250,10 @@ static int action_lwz_physaddr_r(int action, ulong * target, const int *pb)
 	return 0;
 }
 
-static int action_specvar(int action, ulong * target, const int *pb)
+static int action_specvar(int action, unsigned long * target, const int *pb)
 {
 	int r = pb[0] & 0x1f;
-	ulong addr;
+	unsigned long addr;
 
 	switch (pb[1]) {
 	case SPECVAR_SESSION_TABLE:
@@ -278,9 +278,9 @@ static int action_specvar(int action, ulong * target, const int *pb)
 }
 
 /* Note: this only works under linux */
-static int action_tophysvirt(int action, ulong * target, const int *pb)
+static int action_tophysvirt(int action, unsigned long * target, const int *pb)
 {
-	ulong addr = virt_to_phys(0);
+	unsigned long addr = virt_to_phys(0);
 	int dr = (pb[0] >> 5) & 0x1f;
 	int sr = pb[0] & 0x1f;
 
@@ -293,11 +293,11 @@ static int action_tophysvirt(int action, ulong * target, const int *pb)
 }
 
 /* pb[] = { vector, size, vret_offs, ...hook_code...  }  */
-static int action_reloc_hook(int action, ulong * hookcode, const int *pb)
+static int action_reloc_hook(int action, unsigned long * hookcode, const int *pb)
 {
-	ulong addr, inst, vector = pb[0], size = pb[1], vret_offs = pb[2];
+	unsigned long addr, inst, vector = pb[0], size = pb[1], vret_offs = pb[2];
 	cleanup_entry_t *clean;
-	ulong *vector_virt, *target;
+	unsigned long *vector_virt, *target;
 	action_pb_t *apb;
 	char *lowmem;
 	int i;
@@ -322,14 +322,14 @@ static int action_reloc_hook(int action, ulong * hookcode, const int *pb)
 			continue;
 
 		/* insert the absolut branch */
-		target = (ulong *) (code_base + apb->offs);
+		target = (unsigned long *) (code_base + apb->offs);
 		*target = ((18 << 26) + 2) | lowmem_tophys(lowmem + vret_offs);
-		flush_icache_range((ulong) target, (ulong) target + 4);
+		flush_icache_range((unsigned long) target, (unsigned long) target + 4);
 		/* printk("'ba xxx' added (opcode %08lX at %p)\n", *target, target ); */
 	}
 
 	/* fix the hook address in the glue code */
-	target = (ulong *) lowmem;
+	target = (unsigned long *) lowmem;
 	target[1] = (target[1] & ~0xffff) | (addr >> 16);	/* target[0] = addis r3,0,0 */
 	target[3] = (target[3] & ~0xffff) | (addr & 0xffff);	/* target[1] = ori r3,r3,0 */
 
@@ -338,12 +338,12 @@ static int action_reloc_hook(int action, ulong * hookcode, const int *pb)
 	clean->opcode = inst;
 	if (relocate_inst(&inst, vector, lowmem_tophys(lowmem + vret_offs)))
 		return 1;
-	*(ulong *) (lowmem + vret_offs) = inst;
-	flush_icache_range((ulong) lowmem, (ulong) lowmem + size);
+	*(unsigned long *) (lowmem + vret_offs) = inst;
+	flush_icache_range((unsigned long) lowmem, (unsigned long) lowmem + size);
 
 	/* insert branch, 'ba lowmem_ph' */
-	*(volatile ulong *)vector_virt = 0x48000002 + lowmem_tophys(lowmem);
-	flush_icache_range((ulong) vector_virt, (ulong) vector_virt + 4);
+	*(volatile unsigned long *)vector_virt = 0x48000002 + lowmem_tophys(lowmem);
+	flush_icache_range((unsigned long) vector_virt, (unsigned long) vector_virt + 4);
 
 	/* we are in business! */
 	clean->inst_addr = vector_virt;
@@ -351,7 +351,7 @@ static int action_reloc_hook(int action, ulong * hookcode, const int *pb)
 }
 
 /* pb = { size, where_to_store_lowmem_addr, ...code... } */
-static int action_reloc_low(int action, ulong * dummy, const int *pb)
+static int action_reloc_low(int action, unsigned long * dummy, const int *pb)
 {
 	int size = pb[0];
 	char **func_ptr = (char **)pb[1];
@@ -361,16 +361,16 @@ static int action_reloc_low(int action, ulong * dummy, const int *pb)
 		return 1;
 	memcpy(lowmem, (char *)&pb[2], size);
 
-	flush_icache_range((ulong) lowmem, (ulong) lowmem + size);
+	flush_icache_range((unsigned long) lowmem, (unsigned long) lowmem + size);
 	*func_ptr = lowmem;
 	return 0;
 }
 
 /* pb = { symind, size, fret_offset, codeglue... } */
-static int action_hook_function(int action, ulong * hookcode, const int *pb)
+static int action_hook_function(int action, unsigned long * hookcode, const int *pb)
 {
-	ulong addr, fhook = pb[0], size = pb[1], fret_offs = pb[2];
-	ulong *target, inst;
+	unsigned long addr, fhook = pb[0], size = pb[1], fret_offs = pb[2];
+	unsigned long *target, inst;
 	char *lowmem, *func_addr = NULL;
 	cleanup_entry_t *clean;
 
@@ -392,38 +392,38 @@ static int action_hook_function(int action, ulong * hookcode, const int *pb)
 	memcpy(lowmem, &pb[3], size);
 
 	/* Fix the hook address in the glue code */
-	target = (ulong *) lowmem;
-	addr = (ulong) hookcode;
+	target = (unsigned long *) lowmem;
+	addr = (unsigned long) hookcode;
 	target[1] = (target[1] & ~0xffff) | (addr >> 16);	/* target[1] = addis rX,0,0 */
 	target[2] = (target[2] & ~0xffff) | (addr & 0xffff);	/* target[2] = ori rX,rX,0 */
 
 	/* relocate overwritten instruction and add relative return branch */
-	inst = *(ulong *) func_addr;
+	inst = *(unsigned long *) func_addr;
 	clean->opcode = inst;
-	if (relocate_inst(&inst, (ulong) func_addr, (ulong) lowmem + fret_offs))
+	if (relocate_inst(&inst, (unsigned long) func_addr, (unsigned long) lowmem + fret_offs))
 		return 1;
-	target = (ulong *) (lowmem + fret_offs);
+	target = (unsigned long *) (lowmem + fret_offs);
 	target[0] = inst;
 	target[1] =
 	    (18 << 26) |
-	    (((ulong) func_addr - (ulong) & target[1] +
+	    (((unsigned long) func_addr - (unsigned long) & target[1] +
 	      sizeof(long)) & 0x03fffffc);
-	flush_icache_range((ulong) lowmem, (ulong) lowmem + size);
+	flush_icache_range((unsigned long) lowmem, (unsigned long) lowmem + size);
 	_sync();
 
 	/* insert relative branch, 'b lowmem' */
-	*(volatile ulong *)func_addr =
+	*(volatile unsigned long *)func_addr =
 	    (18 << 26) | ((lowmem - func_addr) & 0x03fffffc);
-	flush_icache_range((ulong) func_addr, (ulong) func_addr + 4);
+	flush_icache_range((unsigned long) func_addr, (unsigned long) func_addr + 4);
 
 	_sync();
 
 	/* we are in business! */
-	clean->inst_addr = (ulong *) func_addr;
+	clean->inst_addr = (unsigned long *) func_addr;
 	return 0;
 }
 
-static int action_noaction(int action, ulong * hookcode, const int *pb)
+static int action_noaction(int action, unsigned long * hookcode, const int *pb)
 {
 	return 0;
 }
@@ -471,7 +471,7 @@ int perform_actions(void)
 
 	for (action = 0; action < MAX_NUM_ACTIONS; action++) {
 		for (i = 0; (pb = find_action(action, i)); i++) {
-			ulong *target = (ulong *) (code_base + pb->offs);
+			unsigned long *target = (unsigned long *) (code_base + pb->offs);
 
 			if (pb->offs > code_size) {
 				printk("OFFSET ERROR!\n");
@@ -486,11 +486,11 @@ int perform_actions(void)
 
 		/* we need to flush the icache before the hook actions are performed */
 		if (action == FLUSH_CACHE_ACTION)
-			flush_icache_range((ulong) code_base,
-					 (ulong) code_base + code_size);
+			flush_icache_range((unsigned long) code_base,
+					 (unsigned long) code_base + code_size);
 	}
 	/* to be on the safe side, flush the cache once more */
-	flush_icache_range((ulong) code_base, (ulong) code_base + code_size);
+	flush_icache_range((unsigned long) code_base, (unsigned long) code_base + code_size);
 	return 0;
       error:
 	printk("MOL: action %d error\n", action);
@@ -505,10 +505,10 @@ void cleanup_actions(void)
 
 	for (i = 0; i < num_cleanup_entries; i++, ce++) {
 		if (ce->inst_addr) {
-			*(volatile ulong *)ce->inst_addr =
+			*(volatile unsigned long *)ce->inst_addr =
 			    cleanup_table[i].opcode;
-			flush_icache_range((ulong) ce->inst_addr,
-					 (ulong) ce->inst_addr + 4);
+			flush_icache_range((unsigned long) ce->inst_addr,
+					 (unsigned long) ce->inst_addr + 4);
 		}
 	}
 	lowmem_free_all();

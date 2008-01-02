@@ -8,19 +8,22 @@
  *   
  */
 
+#include "kernel_vars.h"
+#include "asmfuncs.h"
+#include "hash.h"
+#include "map.h"
+
+/*
 #include "archinclude.h"
 #include "alloc.h"
-#include "kernel_vars.h"
 #include "mmu.h"
 #include "mmu_contexts.h"
-#include "asmfuncs.h"
 #include "emu.h"
 #include "misc.h"
 #include "mtable.h"
 #include "performance.h"
 #include "context.h"
-#include "hash.h"
-#include "map.h"
+*/
 
 /* GLOBALS */
 hash_info_t ptehash;
@@ -33,14 +36,14 @@ static struct {
 
 static int create_pte_hash(void)
 {
-	ulong size = 1024 * 128;	/* 128K is the kmalloc limit */
-	ulong sdr1, mask, base, physbase;
+	unsigned long size = 1024 * 128;	/* 128K is the kmalloc limit */
+	unsigned long sdr1, mask, base, physbase;
 	char *p;
 
 	if (!(p = kmalloc(size, GFP_KERNEL)))
 		return 1;
 	memset(p, 0, size);
-	base = (ulong) p;
+	base = (unsigned long) p;
 	physbase = virt_to_phys((char *)base);
 
 	if ((physbase & (size - 1))) {
@@ -57,7 +60,7 @@ static int create_pte_hash(void)
 
 	hs.allocation = p;
 	ptehash.sdr1 = sdr1;
-	ptehash.base = (ulong *) base;
+	ptehash.base = (unsigned long *) base;
 
 	printk("SDR1 = %08lX\n", sdr1);
 	return 0;
@@ -65,7 +68,7 @@ static int create_pte_hash(void)
 
 int init_hash(void)
 {
-	ulong sdr1;
+	unsigned long sdr1;
 
 	memset(&ptehash, 0, sizeof(ptehash));
 

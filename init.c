@@ -8,16 +8,18 @@
  *   
  */
 
-#include "archinclude.h"
-#include "alloc.h"
 #include "kernel_vars.h"
+#include "hash.h"
 #include "misc.h"
+#include "ioctl.h"
 #include "mmu.h"
 #include "asmfuncs.h"
+
+/*
+#include "alloc.h"
 #include "performance.h"
-#include "mol-ioctl.h"
 #include "version.h"
-#include "hash.h"
+*/
 
 /* globals */
 session_table_t *g_sesstab;
@@ -67,7 +69,7 @@ void common_cleanup(void)
 static int initialize_session_(uint index)
 {
 	kernel_vars_t *kv;
-	ulong kv_phys;
+	unsigned long kv_phys;
 
 	if (g_sesstab->magic == 1)
 		return -EMOLSECURITY;
@@ -86,7 +88,7 @@ static int initialize_session_(uint index)
 	kv->session_index = index;
 	kv->kvars_virt = kv;
 	kv_phys = virt_to_phys(kv);
-	kv->kvars_tophys_offs = kv_phys - (ulong) kv;
+	kv->kvars_tophys_offs = kv_phys - (unsigned long) kv;
 
 	if (init_mmu(kv))
 		goto error;

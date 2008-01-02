@@ -10,20 +10,24 @@
 
 #define DBG_TRACE	0	// enable TRACE macro?
 
-#include "archinclude.h"
 #include "processor.h"		/* avoid <asm/processor.h> (bogus SPRN_TBWU/L) */
-#include "asm_offsets.h"
 #include "asmdefs.h"
-#include "molasm.h"
-#include "asmdbg.h"
-#include "actions.h"
-#include "vector.h"
 #include "rvec.h"
 #include "constants.h"
 #include "mac_registers.h"
 #include "mmu.h"
 #include "osi.h"
 #include "kernel_vars.h"
+
+/*
+#include "archinclude.h"
+#include "asm_offsets.h"
+#include "molasm.h"
+#include "asmdbg.h"
+#include "actions.h"
+#include "vector.h"
+*/
+
 
 		
 /************************************************************************/

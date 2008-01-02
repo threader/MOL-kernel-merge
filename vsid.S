@@ -38,7 +38,7 @@ emulate_mtsr:
 	/******* vsid lookup (skiplist search)  *******/
 	
 	lwz	r2,K_VSID_SL_SLEVEL(r1)		// n = search level (0..15)
-	rlwinm	r2,r2,SLEVEL_SHIFT,0,29		// n *= 4 (or n *= 8 on darwin)
+	rlwinm	r2,r2,SLEVEL_SHIFT,0,29		// n *= 4
 
 	addi	r3,r1,K_VSID_SL_ROOT_ELEM	// p = root element
 1:	add	r5,r2,r3			//

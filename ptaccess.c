@@ -8,26 +8,25 @@
  *   
  */
 
-#include "archinclude.h"
 #include "mmu.h"
 #include "rvec.h"
 #include "mtable.h"
 #include "misc.h"
 #include "performance.h"
 
-extern int do_intercept_tlbie(kernel_vars_t * kv, ulong pte0, ulong pte1,
-			      ulong pteoffs);
-extern int do_intercept_tlbie_block(kernel_vars_t * kv, ulong pteoffs,
-				    ulong length);
+extern int do_intercept_tlbie(kernel_vars_t * kv, unsigned long pte0, unsigned long pte1,
+			      unsigned long pteoffs);
+extern int do_intercept_tlbie_block(kernel_vars_t * kv, unsigned long pteoffs,
+				    unsigned long length);
 
 #define	MMU	(kv->mmu)
 #define	MREGS	(kv->mregs)
 
 int
-do_intercept_tlbie(kernel_vars_t * kv, ulong pte0, ulong pte1, ulong pteoffs)
+do_intercept_tlbie(kernel_vars_t * kv, unsigned long pte0, unsigned long pte1, unsigned long pteoffs)
 {
 	int vsid = (pte0 >> 7) & VSID_MASK;
-	ulong v;
+	unsigned long v;
 
 	BUMP(do_intercept_tlbie);
 
@@ -46,7 +45,7 @@ do_intercept_tlbie(kernel_vars_t * kv, ulong pte0, ulong pte1, ulong pteoffs)
 	return RVEC_NOP;
 }
 
-int do_intercept_tlbie_block(kernel_vars_t * kv, ulong pteoffs, ulong length)
+int do_intercept_tlbie_block(kernel_vars_t * kv, unsigned long pteoffs, unsigned long length)
 {
 	unsigned int finish;
 
@@ -63,7 +62,7 @@ int do_intercept_tlbie_block(kernel_vars_t * kv, ulong pteoffs, ulong length)
 
 	while (pteoffs < finish) {
 		if (check_bit_mol(pteoffs >> 3, MMU.pthash_inuse_bits)) {
-			ulong pte0, pte1;
+			unsigned long pte0, pte1;
 
 			pte0 = *((unsigned int *)(MMU.hash_base + pteoffs));
 			pte1 = *((unsigned int *)(MMU.hash_base + pteoffs + 4));
@@ -78,10 +77,10 @@ int do_intercept_tlbie_block(kernel_vars_t * kv, ulong pteoffs, ulong length)
 
 #ifdef EMULATE_603
 
-extern int do_tlbli(kernel_vars_t * kv, ulong ea);
-extern int do_tlbld(kernel_vars_t * kv, ulong ea);
+extern int do_tlbli(kernel_vars_t * kv, unsigned long ea);
+extern int do_tlbld(kernel_vars_t * kv, unsigned long ea);
 
-int do_tlbli(kernel_vars_t * kv, ulong ea)
+int do_tlbli(kernel_vars_t * kv, unsigned long ea)
 {
 	int ind = (ea >> 12) & 0x1f;
 	mPTE_t *p;
@@ -94,13 +93,13 @@ int do_tlbli(kernel_vars_t * kv, ulong ea)
 	if (p->v)
 		flush_vsid_ea(kv, p->vsid, MMU.ptes_i_ea_603[ind]);
 	MMU.ptes_i_ea_603[ind] = ea & 0x0ffff000;
-	*(ulong *) p = MREGS.spr[S_ICMP];
-	*((ulong *) p + 1) = MREGS.spr[S_RPA];
+	*(unsigned long *) p = MREGS.spr[S_ICMP];
+	*((unsigned long *) p + 1) = MREGS.spr[S_RPA];
 
 	return RVEC_NOP;
 }
 
-int do_tlbld(kernel_vars_t * kv, ulong ea)
+int do_tlbld(kernel_vars_t * kv, unsigned long ea)
 {
 	int ind = (ea >> 12) & 0x1f;
 	mPTE_t *p;
@@ -114,17 +113,17 @@ int do_tlbld(kernel_vars_t * kv, ulong ea)
 	if (p->v)
 		flush_vsid_ea(kv, p->vsid, MMU.ptes_d_ea_603[ind]);
 	MMU.ptes_d_ea_603[ind] = ea & 0x0ffff000;
-	*(ulong *) p = MREGS.spr[S_DCMP];
-	*((ulong *) p + 1) = MREGS.spr[S_RPA];
+	*(unsigned long *) p = MREGS.spr[S_DCMP];
+	*((unsigned long *) p + 1) = MREGS.spr[S_RPA];
 
 	return RVEC_NOP;
 }
 
-int do_tlbie(kernel_vars_t * kv, ulong ea)
+int do_tlbie(kernel_vars_t * kv, unsigned long ea)
 {
 	int ind = (ea >> 12) & 0x1f;
 	mPTE_t *pi, *pd;
-	ulong *iea, *dea;
+	unsigned long *iea, *dea;
 
 	pi = &MMU.ptes_i_603[ind];
 	pd = &MMU.ptes_d_603[ind];
@@ -135,8 +134,8 @@ int do_tlbie(kernel_vars_t * kv, ulong ea)
 			flush_vsid_ea(kv, pi->vsid, *iea);
 		if (pd->v)
 			flush_vsid_ea(kv, pd->vsid, *dea);
-		*(ulong *) pi = 0;
-		*(ulong *) pd = 0;
+		*(unsigned long *) pi = 0;
+		*(unsigned long *) pd = 0;
 	}
 	return RVEC_NOP;
 }

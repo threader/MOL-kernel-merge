@@ -8,18 +8,18 @@
  *   
  */
 
-#ifdef UL_DEBUG
-#include "mtable_dbg.c"
-#else
-#include "archinclude.h"
-#include "alloc.h"
 #include "kernel_vars.h"
-#include "asmfuncs.h"
-#include "mmu.h"
-#include "performance.h"
-#endif
 #include "mtable.h"
 #include "hash.h"
+#include "asmfuncs.h"
+#include "performance.h"
+#include "mmu.h"
+
+/* FIXME
+#ifdef UL_DEBUG
+#include "mtable_dbg.c"
+#endif
+*/
 
 /* #define DEBUG */
 
@@ -36,7 +36,7 @@ typedef struct pterec pterec_t;
 struct pterec {
 	pterec_t *ea_next;	/* ea ring (MUST GO FIRST) */
 	pterec_t *lv_next;	/* lv ring */
-	uint pent;		/* defined below */
+	unsigned int pent;		/* defined below */
 };
 
 #define PENT_LV_HEAD	BIT(0)	/* Resident - do not put on free list */
@@ -73,12 +73,12 @@ struct vsid_ent {		/* record which describes a mac vsid */
 
 #define PTE_TO_IND(pte)	((((int)pte - (int)ptehash.base) & ptehash.pte_mask) >> 3)
 
-#define ZERO_PTE(pent)	*((ulong*)ptehash.base + ((pent & PENT_INDEX_MASK) << 1)) = 0
+#define ZERO_PTE(pent)	*((unsigned long*)ptehash.base + ((pent & PENT_INDEX_MASK) << 1)) = 0
 
 struct pte_lvrange {
 	pterec_t *pents;
-	ulong base;		/* we want to do unsigned compares */
-	ulong size;
+	unsigned long base;		/* we want to do unsigned compares */
+	unsigned long size;
 	pte_lvrange_t *next;	/* linked list */
 };
 
@@ -126,11 +126,11 @@ struct vsid_info {
 
 #define vsid_ent_lookup( kv, mvsid )	((vsid_ent_t*)skiplist_lookup( &kv->mmu.vsid_sl, mvsid ))
 
-static void flush_vsid_ea_(vsid_info_t * vi, vsid_ent_t * r, ulong ea)
+static void flush_vsid_ea_(vsid_info_t * vi, vsid_ent_t * r, unsigned long ea)
 {
 	pent_table_t *t = r->lev2[LEV2_IND(ea)];
 	pterec_t **pp, **headp, *pr, *next, *lvp;
-	uint topea, pent;
+	unsigned int topea, pent;
 	int worked;
 
 	if (!t || !(*(pp = &t->pelist[PELIST_IND(ea)])))
@@ -186,7 +186,7 @@ static void flush_vsid_ea_(vsid_info_t * vi, vsid_ent_t * r, ulong ea)
 		__tlbie(ea);
 }
 
-void flush_vsid_ea(kernel_vars_t * kv, int mac_vsid, ulong ea)
+void flush_vsid_ea(kernel_vars_t * kv, int mac_vsid, unsigned long ea)
 {
 	vsid_info_t *vi = MMU.vsid_info;
 	vsid_ent_t *r;
@@ -200,7 +200,7 @@ void flush_vsid_ea(kernel_vars_t * kv, int mac_vsid, ulong ea)
 static void pent_flush_unlink_ea(pterec_t * pr)
 {
 	pterec_t **head, *prev;
-	uint ea;
+	unsigned int ea;
 
 	//BUMP( pent_flush_unlink_ea );
 #ifdef DEBUG
@@ -224,7 +224,7 @@ static void pent_flush_unlink_ea(pterec_t * pr)
 
 	/* OK... it is unlinked. Reconstruct EA and flush it */
 	ZERO_PTE(pr->pent);
-	ea = ((uint) head >> 2) & 0x1f;	/* Bits 15-19 of ea */
+	ea = ((unsigned int) head >> 2) & 0x1f;	/* Bits 15-19 of ea */
 	if (pr->pent & PENT_EA_BIT14)
 		ea |= 0x20;
 	ea = ea << 12;
@@ -235,7 +235,7 @@ static void pent_flush_unlink_ea(pterec_t * pr)
 	/* caller's responsibility to free the pent */
 }
 
-static void flush_lvptr_(vsid_info_t * vi, ulong lvptr)
+static void flush_lvptr_(vsid_info_t * vi, unsigned long lvptr)
 {
 	pterec_t *head, *last, *first;
 	pte_lvrange_t *lvr;
@@ -278,7 +278,7 @@ static void flush_lvptr_(vsid_info_t * vi, ulong lvptr)
 }
 
 /* asynchronous entrypoint (caused e.g. a swapout) */
-void flush_lvptr(kernel_vars_t * kv, ulong lvptr)
+void flush_lvptr(kernel_vars_t * kv, unsigned long lvptr)
 {
 	vsid_info_t *vi = MMU.vsid_info;
 	LOCK;
@@ -288,7 +288,7 @@ void flush_lvptr(kernel_vars_t * kv, ulong lvptr)
 	UNLOCK;
 }
 
-void flush_lv_range(kernel_vars_t * kv, ulong lvbase, int size)
+void flush_lv_range(kernel_vars_t * kv, unsigned long lvbase, int size)
 {
 	vsid_info_t *vi = MMU.vsid_info;
 	LOCK;
@@ -298,13 +298,13 @@ void flush_lv_range(kernel_vars_t * kv, ulong lvbase, int size)
 	UNLOCK;
 }
 
-void flush_ea_range(kernel_vars_t * kv, ulong org_ea, int size)
+void flush_ea_range(kernel_vars_t * kv, unsigned long org_ea, int size)
 {
 	vsid_info_t *vi = MMU.vsid_info;
 	skiplist_iter_t iter;
 	pent_table_t *t;
 	char *userdata;
-	ulong ea, end;
+	unsigned long ea, end;
 	int i;
 
 	//BUMP( flush_ea_range );
@@ -345,7 +345,7 @@ void flush_ea_range(kernel_vars_t * kv, ulong org_ea, int size)
 static void flush_vsid(vsid_info_t * vi, vsid_ent_t * r)
 {
 	pent_table_t *t;
-	ulong ea = 0;
+	unsigned long ea = 0;
 	int i;
 
 	//BUMP( flush_vsid );
@@ -388,7 +388,7 @@ static void *do_chunk_kmalloc(vsid_info_t * vi, int what)
 
 	if (vi->alloc_size > vi->alloc_limit)
 		return NULL;
-	if (!(ptr = (char *)get_zeroed_page()))
+	if (!(ptr = (char *)get_zeroed_page(GFP_KERNEL)))
 		return NULL;
 	mp = (alloc_ent_t *) ((char *)ptr + 0x1000 - sizeof(alloc_ent_t));
 
@@ -410,7 +410,7 @@ static void do_kfree(vsid_info_t * vi, int what)
 		p = *mp;
 		if (p->what == what || what == ALLOC_CONT_ANY) {
 			*mp = p->next;
-			free_page((ulong) p->ptr);
+			free_page((unsigned long) p->ptr);
 
 			vi->alloc_size -= 0x1000;
 			BUMP_N(released, 0x1000);
@@ -595,12 +595,12 @@ relink_lv(vsid_info_t * vi, pterec_t * pr, pte_lvrange_t * lvrange, char *lvptr)
 
 /* Note: If lvrange is NULL then lvptr should be ignored */
 void
-pte_inserted(kernel_vars_t * kv, ulong ea, char *lvptr, pte_lvrange_t * lvrange,
-	     ulong * pte, vsid_ent_t * r, int segreg)
+pte_inserted(kernel_vars_t * kv, unsigned long ea, char *lvptr, pte_lvrange_t * lvrange,
+	     unsigned long * pte, vsid_ent_t * r, int segreg)
 {
 	vsid_info_t *vi = MMU.vsid_info;
 	int pl_ind = PELIST_IND(ea);
-	uint pent, pent_cmp;
+	unsigned int pent, pent_cmp;
 	pterec_t *pr, **pp;
 	pent_table_t **tt;
 
@@ -737,8 +737,8 @@ void clear_pte_hash_table(kernel_vars_t * kv)
 	clear_all_vsids(kv);
 }
 
-vsid_ent_t *vsid_get_user_sv(kernel_vars_t * kv, int mac_vsid, ulong * user_ret,
-			     ulong * sv_ret)
+vsid_ent_t *vsid_get_user_sv(kernel_vars_t * kv, int mac_vsid, unsigned long * user_ret,
+			     unsigned long * sv_ret)
 {
 	vsid_ent_t *r = vsid_ent_lookup(kv, mac_vsid);
 
@@ -796,7 +796,7 @@ void mtable_reclaim(kernel_vars_t * kv)
 
 			/* the segment might be in use... */
 			for (i = 0; i < 16 && MMU.vsid[i] != r; i++) ;
-			if (i != 16 || (uint) vsid > VSID_MASK)
+			if (i != 16 || (unsigned int) vsid > VSID_MASK)
 				continue;
 			skiplist_delete(&MMU.vsid_sl, vsid);
 			BUMP(vsid_reclaim);
@@ -822,7 +822,7 @@ pte_lvrange_t *register_lvrange(kernel_vars_t * kv, char *lvbase, int size)
 		return NULL;
 	memset(lvr, 0, sizeof(pte_lvrange_t));
 
-	if (!(lvr->pents = vmalloc_mol(s))) {
+	if (!(lvr->pents = vmalloc(s))) {
 		kfree(lvr);
 		return NULL;
 	}
@@ -832,7 +832,7 @@ pte_lvrange_t *register_lvrange(kernel_vars_t * kv, char *lvbase, int size)
 		lvr->pents[i].lv_next = &lvr->pents[i];
 		lvr->pents[i].ea_next = NULL;
 	}
-	lvr->base = (ulong) lvbase;
+	lvr->base = (unsigned long) lvbase;
 	lvr->size = size;
 
 	LOCK;

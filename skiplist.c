@@ -8,9 +8,11 @@
  *   
  */
 
-#include "archinclude.h"
+#include <linux/types.h>
+#include <linux/kernel.h>
+#include <linux/string.h>	/* For memset */
+
 #include "skiplist.h"
-#include "alloc.h"
 
 #define SKIPLIST_END 		INT_MAX	/* this key is reserved */
 
